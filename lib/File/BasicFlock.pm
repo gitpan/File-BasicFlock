@@ -12,16 +12,13 @@ use Carp;
 # It would be nice if I could use fcntl.ph and
 # errno.ph, but alas, that isn't safe.
 #
-use POSIX qw(EAGAIN ENOENT EEXIST O_EXCL O_CREAT O_RDONLY O_WRONLY); 
-sub LOCK_SH {1;}
-sub LOCK_EX {2;}
-sub LOCK_NB {4;}
-sub LOCK_UN {8;}
+use POSIX qw(EAGAIN ENOENT EEXIST O_RDWR); 
+use Fcntl qw(LOCK_SH LOCK_EX LOCK_NB LOCK_UN);
 
 use vars qw($VERSION %locks %lockHandle %shared $debug);
 
 BEGIN	{
-	$VERSION = 96.042302;
+	$VERSION = 98.120200;
 	$debug = 0;
 }
 
@@ -36,12 +33,11 @@ sub lock
 	#my $f = new FileHandle;
 
 	$gensym++;
-	my $f = "File::Flock::$gensym";
+	my $f = "File::BasicFlock::$gensym";
 
 	my $previous = exists $locks{$file};
 
-	# the file may be springing in and out of existance...
-	unless (sysopen($f, $file, O_RDONLY)) {
+	unless (sysopen($f, $file, O_RDWR)) {
 		croak "open $file: $!";
 	}
 	$locks{$file} = $locks{$file} || 0;
@@ -51,8 +47,8 @@ sub lock
 
 	my $flags;
 
-	$flags = $shared ? &LOCK_SH : &LOCK_EX;
-	$flags |= &LOCK_NB
+	$flags = $shared ? LOCK_SH : LOCK_EX;
+	$flags |= LOCK_NB
 		if $nonblocking;
 	
 	my $r = flock($f, $flags);
@@ -86,7 +82,7 @@ sub unlock
 	return 0 unless defined $f;
 
 	print " $$) " if $debug;
-	flock($f, &LOCK_UN)
+	flock($f, LOCK_UN)
 		or croak "flock $f UN: $!";
 
 	close($f);
@@ -123,7 +119,7 @@ __DATA__
 =head1 DESCRIPTION
 
 Lock files using the flock() call.  The file to be locked must 
-already exist.
+already exist.  This is a very thing interface.
 
 =head1 AUTHOR
 

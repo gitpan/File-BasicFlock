@@ -1,6 +1,4 @@
-#!/usr/local/bin/perl -w
-
-unshift(@INC, ".");
+#!/usr/local/bin/perl -w -I.
 
 $counter = "/tmp/flt1.$$";
 $lock    = "/tmp/flt2.$$";
